@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Will Lateness Poll</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .poll-container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 350px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        button {
+            font-size: 24px;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+        }
+        #upButton {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #downButton {
+            background-color: #F44336;
+            color: white;
+        }
+        #percentDisplay {
+            font-size: 48px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        #totalVotes {
+            color: #666;
+        }
+        #timeInputContainer {
+            margin-top: 15px;
+            display: none;
+        }
+        #timeInput {
+            padding: 5px;
+            width: 100px;
+            text-align: center;
+        }
+        #averageTimeDisplay {
+            margin-top: 10px;
+            color: #666;
+        }
+        #resetButton {
+            margin-top: 10px;
+            background-color: #2196F3;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="poll-container">
+        <h1>Will Will Be Late?</h1>
+        <div id="percentDisplay">50%</div>
+        <div id="totalVotes">Total Votes: 0</div>
+        <div class="buttons">
+            <button id="downButton">👎 No</button>
+            <button id="upButton">👍 Yes</button>
+        </div>
+        <div id="timeInputContainer">
+            <label for="timeInput">Predict how late (minutes):</label>
+            <input type="number" id="timeInput" min="1">
+        </div>
+        <div id="averageTimeDisplay">Average Late Time: N/A</div>
+        <button id="resetButton">Reset Poll</button>
+    </div>
+
+    <script>
+        // Poll data storage key
+        const POLL_DATA_KEY = 'willLatenessPollData';
+
+        // Get DOM elements
+        const percentDisplay = document.getElementById('percentDisplay');
+        const totalVotesDisplay = document.getElementById('totalVotes');
+        const upButton = document.getElementById('upButton');
+        const downButton = document.getElementById('downButton');
+        const timeInputContainer = document.getElementById('timeInputContainer');
+        const timeInput = document.getElementById('timeInput');
+        const averageTimeDisplay = document.getElementById('averageTimeDisplay');
+        const resetButton = document.getElementById('resetButton');
+
+        // Initialize poll data
+        let pollData = {
+            upVotes: 0,
+            downVotes: 0,
+            latePredictions: []
+        };
+
+        // Load data from localStorage
+        function loadPollData() {
+            const savedData = localStorage.getItem(POLL_DATA_KEY);
+            if (savedData) {
+                pollData = JSON.parse(savedData);
+                updatePercentage();
+            }
+        }
+
+        // Save data to localStorage
+        function savePollData() {
+            localStorage.setItem(POLL_DATA_KEY, JSON.stringify(pollData));
+        }
+
+        function updatePercentage() {
+            const totalVotes = pollData.upVotes + pollData.downVotes;
+            const percentage = totalVotes > 0 
+                ? Math.round((pollData.upVotes / totalVotes) * 100) 
+                : 50;
+            
+            percentDisplay.textContent = `${percentage}%`;
+            totalVotesDisplay.textContent = `Total Votes: ${totalVotes}`;
+
+            // Update average late time
+            if (pollData.latePredictions.length > 0) {
+                const averageTime = Math.round(
+                    pollData.latePredictions.reduce((a, b) => a + b, 0) / pollData.latePredictions.length
+                );
+                averageTimeDisplay.textContent = `Average Late Time: ${averageTime} minutes`;
+            } else {
+                averageTimeDisplay.textContent = 'Average Late Time: N/A';
+            }
+
+            // Save updated data
+            savePollData();
+        }
+
+        upButton.addEventListener('click', () => {
+            pollData.upVotes++;
+            timeInputContainer.style.display = 'block';
+            timeInput.value = ''; // Reset input
+            timeInput.focus();
+            updatePercentage();
+        });
+
+        downButton.addEventListener('click', () => {
+            pollData.downVotes++;
+            timeInputContainer.style.display = 'none';
+            updatePercentage();
+        });
+
+        timeInput.addEventListener('change', () => {
+            const predictionTime = parseInt(timeInput.value);
+            if (!isNaN(predictionTime) && predictionTime > 0) {
+                pollData.latePredictions.push(predictionTime);
+                updatePercentage();
+                timeInputContainer.style.display = 'none';
+            }
+        });
+
+        // Reset button functionality
+        resetButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset the entire poll? This cannot be undone.')) {
+                pollData = {
+                    upVotes: 0,
+                    downVotes: 0,
+                    latePredictions: []
+                };
+                updatePercentage();
+            }
+        });
+
+        // Load saved data when page loads
+        loadPollData();
+    </script>
+</body>
+</html>
